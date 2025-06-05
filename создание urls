@@ -1,0 +1,11 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.home_page, name='home'),
+    path('search/', views.search_results, name='search_results'),
+    path('services/<int:pk>/', views.service_detail, name='service_detail'),
+    path('employees/<int:pk>/', views.employee_detail, name='employee_detail'),
+    # Новый маршрут для детальной страницы акции
+    path('promotions/<int:pk>/', views.promotion_detail, name='promotion_detail'),
+]
