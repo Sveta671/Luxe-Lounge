@@ -1,0 +1,65 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}{{ employee.full_name }} - Салон Красоты{% endblock %}
+
+{% block content %}
+<div class="row my-4">
+    <div class="col-lg-8 offset-lg-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ employee.full_name }}</li>
+            </ol>
+        </nav>
+
+        <div class="card mb-4 shadow-sm text-center">
+            <div class="card-body">
+                {% if employee.photo %}
+                    <img src="{{ employee.photo.url }}" class="rounded-circle mt-3 mb-3" alt="{{ employee.full_name }}" style="width: 200px; height: 200px; object-fit: cover;">
+                {% else %}
+                    <img src="{% static 'salon/img/default_employee.jpg' %}" class="rounded-circle mt-3 mb-3" alt="Фото мастера" style="width: 200px; height: 200px; object-fit: cover;">
+                {% endif %}
+                <h1 class="card-title text-primary mb-2">{{ employee.full_name }}</h1>
+                <h4 class="text-secondary mb-3">{{ employee.position }}</h4>
+                <p class="card-text lead">{{ employee.specialization|linebreaksbr }}</p>
+                <hr>
+                {# Здесь можно добавить контактную информацию, график работы и т.д. #}
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg mt-3">Назад к главной</a>
+            </div>
+        </div>
+
+        <h2 class="mt-5 mb-3 text-center">Отзывы о мастере "{{ employee.full_name }}"</h2>
+        {% if reviews %}
+            <div class="list-group">
+                {% for review in reviews %}
+                    <div class="list-group-item list-group-item-action mb-2 shadow-sm">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ review.client.full_name }}</h5>
+                            <small class="text-muted">{{ review.review_date|date:"d M Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </p>
+                        <p class="mb-1">{{ review.text }}</p>
+                        {% if review.service %}
+                            <small class="text-muted">Услуга: {{ review.service.name }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                Отзывов об этом мастере пока нет.
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock content %}
