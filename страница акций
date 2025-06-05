@@ -1,0 +1,55 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}{{ promotion.name }} - Салон Красоты{% endblock %}
+
+{% block content %}
+<div class="row my-4">
+    <div class="col-lg-8 offset-lg-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ promotion.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h1 class="card-title text-primary mb-3">{{ promotion.name }}</h1>
+                <p class="card-text lead">{{ promotion.description|linebreaksbr }}</p>
+                <hr>
+                <ul class="list-unstyled mb-4">
+                    <li><i class="bi bi-calendar-range me-2"></i><strong>Период действия:</strong>
+                        {{ promotion.start_date|date:"d M Y" }} - {{ promotion.end_date|date:"d M Y" }}</li>
+                    {% if promotion.discount_percentage %}
+                        <li><i class="bi bi-percent me-2"></i><strong>Скидка:</strong> {{ promotion.discount_percentage }}%</li>
+                    {% elif promotion.fixed_discount_amount %}
+                        <li><i class="bi bi-currency-dollar me-2"></i><strong>Фиксированная скидка:</strong> {{ promotion.fixed_discount_amount }} руб.</li>
+                    {% else %}
+                        <li><i class="bi bi-gift me-2"></i><strong>Тип акции:</strong> Специальное предложение (без денежной скидки)</li>
+                    {% endif %}
+                </ul>
+
+                {% if applicable_services %}
+                    <h4 class="mt-4 mb-3">Услуги, на которые распространяется акция:</h4>
+                    <ul class="list-group list-group-flush mb-4">
+                        {% for service in applicable_services %}
+                            <li class="list-group-item">
+                                <a href="{% url 'service_detail' service.id %}" class="text-decoration-none text-dark">
+                                    {{ service.name }} ({{ service.price }} руб., {{ service.duration_minutes }} мин.)
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        Эта акция не привязана к конкретным услугам или действует на все услуги.
+                    </div>
+                {% endif %}
+
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg mt-3">Назад к главной</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
