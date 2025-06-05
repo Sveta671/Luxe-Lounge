@@ -1,0 +1,77 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}{{ service.name }} - Салон Красоты{% endblock %}
+
+{% block content %}
+<div class="row my-4">
+    <div class="col-lg-8 offset-lg-2">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'home' %}">Главная</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ service.name }}</li>
+            </ol>
+        </nav>
+
+        <div class="card mb-4 shadow-sm">
+            {% if service.image %}
+                <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" style="height: 400px; object-fit: cover;">
+            {% else %}
+                <img src="{% static 'salon/img/default_service.jpg' %}" class="card-img-top" alt="Изображение услуги" style="height: 400px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title text-primary mb-3">{{ service.name }}</h1>
+                <h4 class="text-secondary mb-4">{{ service.price }} руб. <span class="badge bg-info ms-2">{{ service.duration_minutes }} мин.</span></h4>
+                <p class="card-text lead">{{ service.description|linebreaksbr }}</p>
+                <hr>
+                <p class="mb-1"><strong>Категория:</strong>
+                    {% if service.category %}
+                        {{ service.category.name }}
+                    {% else %}
+                        Не указана
+                    {% endif %}
+                </p>
+                <p class="mb-4"><strong>Код услуги:</strong> {{ service.id }}</p>
+
+                <a href="#appointment-form" class="btn btn-success btn-lg">Записаться на услугу</a>
+                <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-lg ms-2">Назад к главной</a>
+            </div>
+        </div>
+
+        <h2 class="mt-5 mb-3 text-center">Отзывы об услуге "{{ service.name }}"</h2>
+        {% if reviews %}
+            <div class="list-group">
+                {% for review in reviews %}
+                    <div class="list-group-item list-group-item-action mb-2 shadow-sm">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ review.client.full_name }}</h5>
+                            <small class="text-muted">{{ review.review_date|date:"d M Y H:i" }}</small>
+                        </div>
+                        <p class="mb-1">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                {% else %}
+                                    <i class="bi bi-star text-warning"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </p>
+                        <p class="mb-1">{{ review.text }}</p>
+                        {% if review.employee %}
+                            <small class="text-muted">Мастер: {{ review.employee.full_name }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info text-center" role="alert">
+                Отзывов об этой услуге пока нет. Станьте первым!
+            </div>
+        {% endif %}
+
+        {# <h2 class="mt-5 mb-3 text-center" id="appointment-form">Записаться на "{{ service.name }}"</h2> #}
+        {# Здесь можно вставить форму записи, которая будет автоматически выбирать эту услугу #}
+
+    </div>
+</div>
+{% endblock content %}
