@@ -1,0 +1,118 @@
+from django.shortcuts import render, get_object_or_404
+from django.db.models import Count, Avg, Max, Min, Sum, Q# Для агрегатных функций
+from django.utils import timezone
+from .models import Service, Employee, Promotion, Review, ServiceCategory, Appointment
+from django.db import models
+
+def home_page(request):
+    # Данные для виджета "Горячие предложения" (Акции)
+    # Запрос: фильтр по активным акциям, сортировка по дате начала, limit 3
+    latest_promotions = Promotion.objects.filter(
+        end_date__gte=timezone.now().date()
+    ).order_by('-start_date')[:3]
+
+    # Данные для виджета "Наши услуги" (Популярные услуги)
+    # Пример QuerySet с использованием агрегатной функции:
+    # Получаем услуги, у которых есть хотя бы 1 запись, и сортируем по количеству записей
+    # (Это пример сложной бизнес-логики: "самые востребованные услуги")
+    popular_services = Service.objects.annotate(
+        appointment_count=Count('appointments')
+    ).filter(
+        appointment_count__gt=0 # Услуги, на которые есть записи
+    ).order_by('-appointment_count', 'name')[:3]
+
+    # Если популярных услуг нет, возьмем просто последние добавленные
+    if not popular_services.exists():
+        popular_services = Service.objects.all().order_by('-id')[:3]
+
+
+    # Данные для виджета "Наши талантливые мастера"
+    # Пример QuerySet: Мастера с наибольшим количеством выполненных записей
+    # (Ещё пример сложной бизнес-логики: "самые загруженные/популярные мастера")
+    top_employees = Employee.objects.annotate(
+        completed_appointments=Count('appointments', filter=models.Q(appointments__status='Выполнена'))
+    ).order_by('-completed_appointments', 'full_name')[:3]
+
+    if not top_employees.exists():
+        top_employees = Employee.objects.all().order_by('full_name')[:3] # Просто 3 первых по алфавиту, если нет выполненных записей
+
+    # Данные для виджета "Последние отзывы"
+    # Запрос: последние 3 отзыва, отсортированные по дате в обратном порядке
+    latest_reviews = Review.objects.all().order_by('-review_date')[:3]
+
+    # Данные для формы записи (все услуги и мастера)
+    all_services = Service.objects.all().order_by('name')
+    all_employees = Employee.objects.all().order_by('full_name')
+
+    context = {
+        'latest_promotions': latest_promotions,
+        'popular_services': popular_services,
+        'top_employees': top_employees,
+        'latest_reviews': latest_reviews,
+        'all_services': all_services,   # Для формы записи
+        'all_employees': all_employees, # Для формы записи
+    }
+    return render(request, 'salon/index.html', context)
+
+def search_results(request):
+    query = request.GET.get('q') # Получаем поисковый запрос из GET-параметра 'q'
+    services = []
+    employees = []
+
+    if query:
+        # Поиск услуг: по названию или описанию
+        services = Service.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        ).distinct().order_by('name')
+
+        # Поиск сотрудников: по ФИО, должности или специализации
+        employees = Employee.objects.filter(
+            Q(full_name__icontains=query) | Q(position__icontains=query) | Q(specialization__icontains=query)
+        ).distinct().order_by('full_name')
+
+    context = {
+        'query': query,
+        'services': services,
+        'employees': employees,
+    }
+    return render(request, 'salon/search_results.html', context)
+
+def service_detail(request, pk):
+    # get_object_or_404 пытается найти объект по pk или выкидывает 404 ошибку
+    service = get_object_or_404(Service, pk=pk)
+
+    # Можно также получить связанные отзывы для этой услуги
+    reviews = Review.objects.filter(service=service).order_by('-review_date')[:5]
+
+    context = {
+        'service': service,
+        'reviews': reviews, # Передаем отзывы об этой услуге
+    }
+    return render(request, 'salon/service_detail.html', context)
+
+def employee_detail(request, pk):
+    employee = get_object_or_404(Employee, pk=pk)
+
+    # Можно получить отзывы, где этот мастер упоминается
+    reviews = Review.objects.filter(employee=employee).order_by('-review_date')[:5]
+
+    # Можно также получить услуги, которые оказывает этот мастер (если будет связь)
+    # Или просто отобразить его специализацию
+
+    context = {
+        'employee': employee,
+        'reviews': reviews,
+    }
+    return render(request, 'salon/employee_detail.html', context)
+
+def promotion_detail(request, pk):
+    promotion = get_object_or_404(Promotion, pk=pk)
+
+    # Получаем услуги, к которым применяется данная акция
+    applicable_services = promotion.applicable_services.all().order_by('name')
+
+    context = {
+        'promotion': promotion,
+        'applicable_services': applicable_services, # Передаем услуги, к которым акция применима
+    }
+    return render(request, 'salon/promotion_detail.html', context)
