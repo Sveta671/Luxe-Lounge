@@ -1,0 +1,241 @@
+{% extends 'salon/base.html' %}
+{% load static %}
+
+{% block title %}Главная - Luxe Lounge{% endblock %}
+
+{% block content %}
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Добро пожаловать в Салон Красоты!</h1>
+            <p class="col-md-8 fs-4">Мы предлагаем широкий спектр услуг для вашей красоты и здоровья. Откройте для себя мир релаксации и преображения с нашими профессионалами.</p>
+            <a class="btn btn-primary btn-lg" href="#appointment-form" role="button">Записаться онлайн</a> {# Якорь на форму записи #}
+        </div>
+    </div>
+
+    <div class="row my-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Горячие предложения 🔥</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% if latest_promotions %}
+                    {% for promotion in latest_promotions %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ promotion.name }}</h5>
+                                    <p class="card-text">{{ promotion.description|truncatechars:150 }}</p>
+                                    <ul class="list-unstyled">
+                                        {% if promotion.discount_percentage %}
+                                            <li><i class="bi bi-percent me-2"></i>Скидка: {{ promotion.discount_percentage }}%</li>
+                                        {% elif promotion.fixed_discount_amount %}
+                                            <li><i class="bi bi-currency-dollar me-2"></i>Фиксированная скидка: {{ promotion.fixed_discount_amount }} руб.</li>
+                                        {% else %}
+                                            <li><i class="bi bi-gift me-2"></i>Специальное предложение</li>
+                                        {% endif %}
+                                        <li><i class="bi bi-calendar-range me-2"></i>Действует до: {{ promotion.end_date|date:"d M Y" }}</li>
+                                    </ul>
+                                    <a href="{% url 'promotion_detail' promotion.id %}" class="btn btn-outline-primary btn-sm mt-2">Узнать больше</a> {# Заглушка, можно добавить ссылку на страницу акции #}
+                                </div>
+                                <div class="card-footer">
+                                    <small class="text-muted">Акция от {{ promotion.start_date|date:"d M Y" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center text-muted">
+                        <p>На данный момент активных акций нет.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row my-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Наши услуги ✨</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% if popular_services %}
+                    {% for service in popular_services %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                {% if service.image %}
+                                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}" style="height: 200px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'salon/img/default_service.jpg' %}" class="card-img-top" alt="Изображение услуги" style="height: 200px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ service.name }}</h5>
+                                    <p class="card-text">
+                                        <small class="text-muted">Категория: {{ service.category.name|default:"Не указана" }}</small><br>
+                                        {{ service.description|truncatechars:100 }}
+                                    </p>
+                                    <ul class="list-unstyled">
+                                        <li><i class="bi bi-currency-dollar me-2"></i>Цена: {{ service.price }} руб.</li>
+                                        <li><i class="bi bi-clock me-2"></i>Длительность: {{ service.duration_minutes }} мин.</li>
+                                    </ul>
+                                </div>
+                                <div class="card-footer d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'service_detail' service.id %}" class="btn btn-sm btn-outline-info">Подробнее</a> {# Заглушка, ссылка на страницу услуги #}
+                                    <button class="btn btn-sm btn-success disabled">Записаться</button> {# Пока кнопка не работает #}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center text-muted">
+                        <p>В настоящее время услуги не добавлены.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="text-center mt-4">
+                <a href="#" class="btn btn-lg btn-secondary">Посмотреть все услуги</a> {# Заглушка, ссылка на страницу всех услуг #}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row my-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Наши талантливые мастера 💇‍♀️</h2>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% if top_employees %}
+                    {% for employee in top_employees %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm text-center">
+                                {% if employee.photo %}
+                                    <img src="{{ employee.photo.url }}" class="card-img-top rounded-circle mt-3 mx-auto" alt="{{ employee.full_name }}" style="width: 150px; height: 150px; object-fit: cover;">
+                                {% else %}
+                                    <img src="{% static 'salon/img/default_employee.jpg' %}" class="card-img-top rounded-circle mt-3 mx-auto" alt="Фото мастера" style="width: 150px; height: 150px; object-fit: cover;">
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title text-primary">{{ employee.full_name }}</h5>
+                                    <p class="card-text mb-1"><strong>{{ employee.position }}</strong></p>
+                                    <p class="card-text"><small class="text-muted">{{ employee.specialization|truncatechars:70 }}</small></p>
+                                </div>
+                                <div class="card-footer">
+                                    <a href="{% url 'employee_detail' employee.id %}" class="btn btn-outline-secondary btn-sm">Профиль мастера</a> {# Заглушка, ссылка на профиль мастера #}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center text-muted">
+                        <p>Информация о мастерах пока недоступна.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row my-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Что говорят наши клиенты 💬</h2>
+            <div class="row row-cols-1 row-cols-md-2 g-4">
+                {% if latest_reviews %}
+                    {% for review in latest_reviews %}
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <h5 class="card-title">Отзыв от {{ review.client.full_name }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        {% if review.service %}
+                                            Об услуге: {{ review.service.name }}
+                                        {% endif %}
+                                        {% if review.employee %}
+                                            {% if review.service %}, {% endif %}О мастере: {{ review.employee.full_name }}
+                                        {% endif %}
+                                    </h6>
+                                    <p class="card-text">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                        <br>
+                                        "{{ review.text|truncatechars:200 }}"
+                                    </p>
+                                    <p class="card-text"><small class="text-muted">Дата: {{ review.review_date|date:"d M Y H:i" }}</small></p>
+                                    <button class="btn btn-sm btn-outline-info disabled">Подробнее</button> {# Заглушка #}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center text-muted">
+                        <p>Отзывов пока нет.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="row my-5" id="search-section">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Найти услугу или мастера 🔍</h2>
+            <form action="{% url 'search_results' %}" method="get" class="row g-3 justify-content-center">
+                <div class="col-md-6">
+                    <input type="text" class="form-control form-control-lg" name="q" placeholder="Например: стрижка, маникюр, имя мастера..." aria-label="Поиск">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary btn-lg">Найти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row my-5" id="appointment-form">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Записаться на услугу 📅</h2>
+            <div class="card p-4 shadow-sm">
+                <form>
+                    <div class="mb-3">
+                        <label for="clientName" class="form-label">Ваше ФИО</label>
+                        <input type="text" class="form-control" id="clientName" placeholder="Иванов Иван Иванович" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="clientPhone" class="form-label">Телефон</label>
+                        <input type="tel" class="form-control" id="clientPhone" placeholder="+7 (XXX) XXX-XX-XX" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="serviceSelect" class="form-label">Выберите услугу</label>
+                        <select class="form-select" id="serviceSelect" required>
+                            <option selected disabled value="">Выберите...</option>
+                            {# Здесь в будущем можно будет загружать услуги динамически #}
+                            {% for service in all_services %} {# all_services нужно будет добавить в контекст views.py #}
+                                <option value="{{ service.id }}">{{ service.name }} ({{ service.price }} руб.)</option>
+                            {% endfor %}
+                            <option value="other">Другая услуга (уточнить)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="employeeSelect" class="form-label">Предпочитаемый мастер (необязательно)</label>
+                        <select class="form-select" id="employeeSelect">
+                            <option selected value="">Любой</option>
+                            {# Здесь в будущем можно будет загружать мастеров динамически #}
+                            {% for employee in all_employees %} {# all_employees нужно будет добавить в контекст views.py #}
+                                <option value="{{ employee.id }}">{{ employee.full_name }} ({{ employee.position }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="appointmentDate" class="form-label">Желаемая дата и время</label>
+                        <input type="datetime-local" class="form-control" id="appointmentDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Отправить заявку на запись</button>
+                    <small class="text-muted d-block mt-2">Наш администратор свяжется с вами для подтверждения записи.</small>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock content %}
