@@ -1,0 +1,135 @@
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+
+# Модель для Категории Услуг
+class ServiceCategory(models.Model):
+    name = models.CharField(max_length=100, verbose_name="Название категории")
+    description = models.TextField(blank=True, verbose_name="Описание категории")
+    image = models.ImageField(upload_to='category_images/', blank=True, null=True, verbose_name="Изображение категории")
+
+    class Meta:
+        verbose_name = "Категория услуги"
+        verbose_name_plural = "Категории услуг"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+# Модель для Услуги
+class Service(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Название услуги")
+    description = models.TextField(blank=True, verbose_name="Описание услуги")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Цена")
+    duration_minutes = models.IntegerField(verbose_name="Продолжительность (в минутах)", null=True, blank=True)
+    image = models.ImageField(upload_to='service_images/', blank=True, null=True, verbose_name="Изображение")
+    category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name='services', verbose_name="Категория услуги")
+
+    class Meta:
+        verbose_name = "Услуга"
+        verbose_name_plural = "Услуги"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+# Модель для Клиента
+class Client(models.Model):
+    full_name = models.CharField(max_length=255, verbose_name="ФИО")
+    email = models.EmailField(blank=True, verbose_name="Электронная почта")
+    phone = models.CharField(max_length=20, verbose_name="Телефон")
+    registration_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата регистрации")
+    gender = models.CharField(max_length=10, blank=True, verbose_name="Пол", choices=[('Мужской', 'Мужской'), ('Женский', 'Женский'), ('Другой', 'Другой')])
+
+    class Meta:
+        verbose_name = "Клиент"
+        verbose_name_plural = "Клиенты"
+        ordering = ['full_name']
+
+    def __str__(self):
+        return self.full_name
+
+# Модель для Сотрудника
+class Employee(models.Model):
+    full_name = models.CharField(max_length=255, verbose_name="ФИО")
+    position = models.CharField(max_length=100, verbose_name="Должность")
+    specialization = models.CharField(max_length=255, verbose_name="Специализация (какие услуги выполняет)")
+    photo = models.ImageField(upload_to='employee_photos/', blank=True, null=True, verbose_name="Фото")
+    description = models.TextField(blank=True, verbose_name="Описание / Биография")
+
+    class Meta:
+        verbose_name = "Сотрудник"
+        verbose_name_plural = "Сотрудники"
+        ordering = ['full_name']
+
+    def __str__(self):
+        return f"{self.full_name} ({self.position})"
+
+# Модель для Акции / Скидки
+class Promotion(models.Model):
+    name = models.CharField(max_length=200, verbose_name="Название акции")
+    description = models.TextField(blank=True, verbose_name="Описание акции")
+    start_date = models.DateField(verbose_name="Дата начала")
+    end_date = models.DateField(verbose_name="Дата окончания")
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name="Процент скидки",
+                                             validators=[MinValueValidator(0), MaxValueValidator(100)])
+    fixed_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Фиксированная сумма скидки")
+    applicable_services = models.ManyToManyField(Service, related_name='promotions', verbose_name="Привязанные услуги")
+
+    class Meta:
+        verbose_name = "Акция / Скидка"
+        verbose_name_plural = "Акции / Скидки"
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return self.name
+
+# Модель для Записи на услугу (Бронирование)
+class Appointment(models.Model):
+    date_time = models.DateTimeField(verbose_name="Дата и время записи")
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='appointments', verbose_name="Клиент")
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='appointments', verbose_name="Услуга")
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='appointments', verbose_name="Сотрудник")
+    STATUS_CHOICES = [
+        ('Подтверждена', 'Подтверждена'),
+        ('Отменена', 'Отменена'),
+        ('Выполнена', 'Выполнена'),
+        ('Ожидает', 'Ожидает')
+    ]
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='Ожидает', verbose_name="Статус")
+
+    class Meta:
+        verbose_name = "Запись на услугу"
+        verbose_name_plural = "Записи на услуги"
+        ordering = ['date_time']
+        unique_together = ('date_time', 'employee') # Сотрудник не может быть занят двумя записями одновременно
+
+    def __str__(self):
+        return f"Запись {self.client.full_name} на {self.service.name} к {self.employee.full_name} на {self.date_time.strftime('%Y-%m-%d %H:%M')}"
+
+# Модель для Отзыва об услуге / сотруднике
+class Review(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='reviews', verbose_name="Клиент")
+    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviews', verbose_name="Связь с услугой")
+    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviews', verbose_name="Связь с сотрудником")
+    text = models.TextField(verbose_name="Текст отзыва")
+    rating = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        verbose_name="Оценка (от 1 до 5)"
+    )
+    review_date = models.DateTimeField(auto_now_add=True, verbose_name="Дата отзыва")
+
+    class Meta:
+        verbose_name = "Отзыв"
+        verbose_name_plural = "Отзывы"
+        ordering = ['-review_date']
+        # Позволяет клиенту оставить только один отзыв на конкретную услугу или сотрудника
+        # unique_together = ('client', 'service', 'employee') # Это если хотим ограничить один отзыв на пару (клиент-услуга) или (клиент-сотрудник)
+
+    def __str__(self):
+        target = ""
+        if self.service:
+            target += f" об услуге '{self.service.name}'"
+        if self.employee:
+            if target: target += " и"
+            target += f" о сотруднике '{self.employee.full_name}'"
+        return f"Отзыв от {self.client.full_name}{target} ({self.rating}/5)"
