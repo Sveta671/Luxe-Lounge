@@ -1,0 +1,26 @@
+rom django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse
+from .models import (
+    Client, Service, Employee, Appointment, Review, Promotion, ServiceCategory
+)
+
+class PromotionInline(admin.TabularInline):
+    model = Promotion.applicable_services.through # Промежуточная таблица для ManyToMany
+    extra = 1
+    verbose_name = "Привязанная акция"
+    verbose_name_plural = "Привязанные акции"
+
+class AppointmentInline(admin.TabularInline):
+    model = Appointment
+    extra = 0 # Не добавляем пустые формы по умолчанию
+    fields = ('date_time', 'service', 'employee', 'status')
+    readonly_fields = ('date_time',) 
+    show_change_link = True 
+
+class ReviewInline(admin.TabularInline):
+    model = Review
+    extra = 0
+    fields = ('rating', 'text', 'review_date')
+    readonly_fields = ('review_date',)
+    show_change_link = True
